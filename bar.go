@@ -92,7 +92,7 @@ func (b *BarConfig) Generate() string {
 
 func (c *Config) Bar(bar func(*BarConfig)) {
 	b := &BarConfig{
-		Config: New(c.path),
+		Config: c.newSubConfig(),
 	}
 	bar(b)
 	c.AddLine(b)

@@ -2,8 +2,9 @@ package i3config
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
+	"io/ioutil"
+	"os/exec"
+	"path"
 	"strings"
 )
 
@@ -45,10 +46,6 @@ var funcKey = 0
 
 func Exec(cmd string) Command {
 	return Command("exec " + escapeString(cmd))
-}
-
-func (c *Config) Recompile() Command {
-	return Exec("go build -o /usr/bin/i3config " + c.path)
 }
 
 func Mode(name string) Command {
@@ -107,15 +104,32 @@ func ResizeSet(size Size) Command {
 	return Command(cmd)
 }
 
-func (c *Config) ExecFunc(cb func()) Command {
+func (c *Config) ExecFunc(cb func() error) Command {
+	if c.subConfig {
+		panic("ExecFunc must be used from a root config")
+	}
 	key := fmt.Sprint(funcKey)
 	funcKey++
 	c.funcs[key] = cb
-	bin, err := filepath.Abs(os.Args[0])
-	if err != nil {
-		panic(err)
-	}
-	return Command("exec " + bin + " func " + key)
+	dir, file := path.Split(c.path)
+	return Exec(fmt.Sprintf(`bash -c "cd '%s' && go run '%s' func %s"`, dir, file, key))
+}
+func (c *Config) Path() string {
+	return c.path
+}
+
+func (c *Config) Recompile(configPath string) Command {
+	return c.ExecFunc(func() error {
+		b, err := exec.Command("go", "run", c.path).Output()
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(configPath, b, 0644)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (c Command) Generate() string {

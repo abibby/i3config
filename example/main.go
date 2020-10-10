@@ -2,6 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path"
 
 	. "github.com/abibby/i3config"
 )
@@ -41,11 +45,13 @@ var (
 
 func main() {
 	// "~/.config/i3/config"
-	c := New("/home/adam/Documents/code/i3config/example/")
+	c := New("/home/adam/Documents/code/i3config/example/main.go")
 
 	term := "alacritty"
 	editor := "code"
 	// editor := term + " -e nvim"
+
+	c.Set("$test", "5")
 
 	c.Set("$mod", "Mod4")
 
@@ -70,8 +76,8 @@ func main() {
 
 	c.FloatingModifier("$mod")
 
-	c.BindSym("$mod+Shift+r", c.Recompile(), Restart)
-	// c.BindSym("$mod+Shift+r", Exec("make -C ~/.config/i3"), Restart)
+	c.BindSym("$mod+Shift+t", c.Recompile("/home/adam/.config/i3/config"), Restart)
+	c.BindSym("$mod+Shift+r", Exec("make -C ~/.config/i3"), Restart)
 
 	c.BindSym("$mod+Return", Exec(term))
 
@@ -148,6 +154,8 @@ func main() {
 		})
 	})
 
+	quake(c, "zsh", "$mod+grave", "zsh")
+
 	c.BindSym("$mod+e", Exec("emoji"))
 	c.BindSym("$mod+c", Exec(editor))
 	c.Chord("$mod+b", "b", Exec("firefox -P Home"))
@@ -180,12 +188,40 @@ func main() {
 
 func quake(c *Config, name, keys, command string) {
 	modeName := "quake " + name
-
-	termCommand := "alacritty --class quake_term"
+	pidFile := path.Join(os.TempDir(), "i3quake-"+name)
 
 	c.ForWindow(Criteria{Instance: "quake_term"}, FloatingEnabled)
-	c.BindSym(keys, Mode(modeName), Exec(termCommand+" -e '"+command+"'"), Mode("default"))
-	c.Mode(modeName, func(c *Config) {
-		c.BindSym("Escape", Mode("default"), Exec("pkill -f "+termCommand))
+	c.BindSym(keys, c.ExecFunc(func() error {
+		I3Msg(Mode(modeName))
+		defer I3Msg(Mode("default"))
+
+		cmd := exec.Command("alacritty", "--class", "quake_term", "-e", command)
+		err := cmd.Start()
+		if err != nil {
+			return err
+		}
+
+		err = ioutil.WriteFile(pidFile, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0644)
+		if err != nil {
+			return err
+		}
+
+		cmd.Wait()
+		return nil
+	}))
+	c.Mode(modeName, func(sc *Config) {
+		sc.BindSym("Escape", c.ExecFunc(func() error {
+			b, err := ioutil.ReadFile(pidFile)
+			if err != nil {
+				return err
+			}
+
+			err = exec.Command("kill", string(b)).Run()
+			if err != nil {
+				return err
+			}
+
+			return os.Remove(pidFile)
+		}))
 	})
 }

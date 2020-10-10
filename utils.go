@@ -1,7 +1,6 @@
 package i3config
 
 import (
-	"encoding/json"
 	"strings"
 )
 
@@ -14,9 +13,5 @@ func indent(src string) string {
 }
 
 func escapeString(str string) string {
-	b, err := json.Marshal(str)
-	if err != nil {
-		panic(err)
-	}
-	return string(b)
+	return `"` + strings.ReplaceAll(str, `"`, `\\"`) + `"`
 }

@@ -6,7 +6,7 @@ type ModeType struct {
 }
 
 func (c *Config) Mode(name string, mode func(c *Config)) {
-	subConfig := New(c.path)
+	subConfig := c.newSubConfig()
 	mode(subConfig)
 	c.AddLine(&ModeType{
 		name:   name,

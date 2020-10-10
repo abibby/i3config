@@ -3,6 +3,7 @@ package i3config
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"reflect"
 )
 
@@ -11,7 +12,8 @@ type Config struct {
 	lines  []Generator
 	chords Chords
 
-	funcs map[string]func()
+	subConfig bool
+	funcs     map[string]func() error
 }
 
 type Generator interface {
@@ -20,12 +22,19 @@ type Generator interface {
 
 func New(path string) *Config {
 	return &Config{
-		lines:  []Generator{},
-		chords: Chords{},
-		funcs:  map[string]func(){},
+		path:      path,
+		lines:     []Generator{},
+		chords:    Chords{},
+		subConfig: false,
+		funcs:     map[string]func() error{},
 	}
 }
 
+func (c *Config) newSubConfig() *Config {
+	sc := New(c.path)
+	sc.subConfig = true
+	return sc
+}
 func (c *Config) Set(variable, value string) {
 	c.raw(fmt.Sprintf("set %s %s", variable, value))
 }
@@ -43,7 +52,12 @@ func (c *Config) Generate() string {
 
 func (c *Config) Run() {
 	if len(os.Args) > 1 && os.Args[1] == "func" {
-		c.funcs[os.Args[2]]()
+		err := c.funcs[os.Args[2]]()
+		if err != nil {
+			exec.Command("notify-send", err.Error()).Run()
+			fmt.Printf("%v\n", err)
+			os.Exit(1)
+		}
 	} else {
 		c.chords.apply(c)
 		fmt.Print(c.Generate())
