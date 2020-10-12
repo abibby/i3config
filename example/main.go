@@ -9,7 +9,6 @@ import (
 
 	. "github.com/abibby/i3config"
 	"github.com/abibby/i3config/i3msg"
-	"github.com/davecgh/go-spew/spew"
 )
 
 var (
@@ -122,28 +121,35 @@ func main() {
 
 	c.BindSym("$mod+Shift+e", Exec("i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"))
 
-	c.BindSym("$mod+Ctrl+Up", ResizeGrow(Up, 10), ResizeShrink(Down, 10)).Alias("$mod+Ctrl+w")
-	c.BindSym("$mod+Ctrl+Down", ResizeGrow(Down, 10), ResizeShrink(Up, 10)).Alias("$mod+Ctrl+s")
-	c.BindSym("$mod+Ctrl+Left", ResizeGrow(Left, 10), ResizeShrink(Right, 10)).Alias("$mod+Ctrl+a")
-	c.BindSym("$mod+Ctrl+Right", ResizeGrow(Right, 10), ResizeShrink(Left, 10)).Alias("$mod+Ctrl+d")
+	// c.BindSym("$mod+Ctrl+Up", ResizeGrow(Up, 10), ResizeShrink(Down, 10)).Alias("$mod+Ctrl+w")
+	// c.BindSym("$mod+Ctrl+Down", ResizeGrow(Down, 10), ResizeShrink(Up, 10)).Alias("$mod+Ctrl+s")
+	// c.BindSym("$mod+Ctrl+Left", ResizeGrow(Left, 10), ResizeShrink(Right, 10)).Alias("$mod+Ctrl+a")
+	// c.BindSym("$mod+Ctrl+Right", ResizeGrow(Right, 10), ResizeShrink(Left, 10)).Alias("$mod+Ctrl+d")
 
-	c.BindSym("$mod+Ctrl+Up", c.ExecFunc(func() error {
-		root, err := i3msg.GetTree()
-		if err != nil {
-			return err
-		}
-		floating := false
-		root.Walk(func(n *i3msg.Node) bool {
-			if n.Focused {
-				floating = n.Floating == "user_on"
-				return true
-			}
-			return false
-		})
-
-		spew.Dump(floating)
-		return nil
-	})).Alias("$mod+Ctrl+w")
+	c.BindSym(
+		"$mod+Ctrl+Up",
+		If(c, isFloating()).
+			Then(ResizeGrow(Height, 10)).
+			Else(ResizeGrow(Up, 10), ResizeShrink(Down, 10)),
+	).Alias("$mod+Ctrl+w")
+	c.BindSym(
+		"$mod+Ctrl+Down",
+		If(c, isFloating()).
+			Then(ResizeShrink(Height, 10)).
+			Else(ResizeGrow(Down, 10), ResizeShrink(Up, 10)),
+	).Alias("$mod+Ctrl+s")
+	c.BindSym(
+		"$mod+Ctrl+Left",
+		If(c, isFloating()).
+			Then(ResizeShrink(Width, 10)).
+			Else(ResizeGrow(Left, 10), ResizeShrink(Right, 10)),
+	).Alias("$mod+Ctrl+a")
+	c.BindSym(
+		"$mod+Ctrl+Right",
+		If(c, isFloating()).
+			Then(ResizeGrow(Width, 10)).
+			Else(ResizeGrow(Right, 10), ResizeShrink(Left, 10)),
+	).Alias("$mod+Ctrl+d")
 	// c.BindSym("$mod+Ctrl+Up", ResizeGrow(Height, 10)).Alias("$mod+Ctrl+w")
 	// c.BindSym("$mod+Ctrl+Down", ResizeShrink(Height, 10)).Alias("$mod+Ctrl+s")
 	// c.BindSym("$mod+Ctrl+Left", ResizeGrow(Width, 10)).Alias("$mod+Ctrl+a")
@@ -224,6 +230,56 @@ func main() {
 	c.OnStartup(Exec("lxsession"))
 
 	c.Run()
+}
+
+type Builder struct {
+	config        *Config
+	value         func() bool
+	trueCommands  []Command
+	falseCommands []Command
+}
+
+type Condition func() bool
+
+func isFloating() Condition {
+	return func() bool {
+		root, err := i3msg.GetTree()
+		if err != nil {
+			return false
+		}
+		floating := false
+		root.Walk(func(n *i3msg.Node) bool {
+			if n.Focused {
+				floating = n.Floating == "user_on"
+				return true
+			}
+			return false
+		})
+		return floating
+	}
+}
+
+func If(c *Config, value Condition) *Builder {
+	return &Builder{
+		config: c,
+		value:  value,
+	}
+}
+
+func (b *Builder) Then(commands ...Command) *Builder {
+	b.trueCommands = commands
+	return b
+}
+func (b *Builder) Else(commands ...Command) Command {
+	b.falseCommands = commands
+	return b.config.ExecFunc(func() error {
+		if b.value() {
+			i3msg.Run(b.trueCommands...)
+		} else {
+			i3msg.Run(b.falseCommands...)
+		}
+		return nil
+	})
 }
 
 func quake(c *Config, name, keys, command string) {
