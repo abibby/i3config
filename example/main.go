@@ -8,6 +8,8 @@ import (
 	"path"
 
 	. "github.com/abibby/i3config"
+	"github.com/abibby/i3config/i3msg"
+	"github.com/davecgh/go-spew/spew"
 )
 
 var (
@@ -98,11 +100,13 @@ func main() {
 	c.BindSym("$mod+h", SplitHorizontal)
 	c.BindSym("$mod+v", SplitVertical)
 
-	monitors := [][]string{
-		{"eDP-1", "DP-0", "eDP1", "eDP-1"},
-		{"DP-1", "DVI-D-0", "eDP1", "eDP-1"},
-		{"DP-2", "HDMI-0", "eDP1", "eDP-1"},
-	}
+	monitors := transpose([][]string{
+		// Desktop
+		{"HDMI1", "DVI-D-1-1", "HDMI-1-3"},
+
+		{"eDP1", "eDP1", "eDP1"},
+		{"eDP-1", "eDP-1", "eDP-1"},
+	})
 	for i := 1; i <= 12; i++ {
 		workspaceName := fmt.Sprintf("%d", i)
 
@@ -122,6 +126,28 @@ func main() {
 	c.BindSym("$mod+Ctrl+Down", ResizeGrow(Down, 10), ResizeShrink(Up, 10)).Alias("$mod+Ctrl+s")
 	c.BindSym("$mod+Ctrl+Left", ResizeGrow(Left, 10), ResizeShrink(Right, 10)).Alias("$mod+Ctrl+a")
 	c.BindSym("$mod+Ctrl+Right", ResizeGrow(Right, 10), ResizeShrink(Left, 10)).Alias("$mod+Ctrl+d")
+
+	c.BindSym("$mod+Ctrl+Up", c.ExecFunc(func() error {
+		root, err := i3msg.GetTree()
+		if err != nil {
+			return err
+		}
+		floating := false
+		root.Walk(func(n *i3msg.Node) bool {
+			if n.Focused {
+				floating = n.Floating == "user_on"
+				return true
+			}
+			return false
+		})
+
+		spew.Dump(floating)
+		return nil
+	})).Alias("$mod+Ctrl+w")
+	// c.BindSym("$mod+Ctrl+Up", ResizeGrow(Height, 10)).Alias("$mod+Ctrl+w")
+	// c.BindSym("$mod+Ctrl+Down", ResizeShrink(Height, 10)).Alias("$mod+Ctrl+s")
+	// c.BindSym("$mod+Ctrl+Left", ResizeGrow(Width, 10)).Alias("$mod+Ctrl+a")
+	// c.BindSym("$mod+Ctrl+Right", ResizeShrink(Width, 10)).Alias("$mod+Ctrl+d")
 
 	c.Bar(func(bc *BarConfig) {
 		bc.Position(Top)
@@ -155,6 +181,9 @@ func main() {
 	})
 
 	quake(c, "zsh", "$mod+grave", "zsh")
+	quake(c, "node", "$mod+j", "node")
+	quake(c, "math", "$mod+m", "qalc")
+	quake(c, "cal", "$mod+k", "calread")
 
 	c.BindSym("$mod+e", Exec("emoji"))
 	c.BindSym("$mod+c", Exec(editor))
@@ -183,6 +212,17 @@ func main() {
 
 	c.BindSym("$mod+Shift+m", Exec("xmodmap /home/adam/.Xmodmap"))
 
+	c.AlwaysOnStartup(Exec(`feh --bg-fill "$(cat ~/.config/adam/wallpaper)"`))
+	c.AlwaysOnStartup(Exec("comp"))
+	c.AlwaysOnStartup(Exec("nm-applet &"))
+	c.OnStartup(Exec("numlockx on &"))
+	c.OnStartup(Exec("xrdb ~/.Xresources"))
+	c.OnStartup(Exec("pasystray &"))
+	c.OnStartup(Exec("mailspring -b &"))
+	c.OnStartup(Exec("systemctl start --user polkit.service"))
+	c.OnStartup(Exec("dunst"))
+	c.OnStartup(Exec("lxsession"))
+
 	c.Run()
 }
 
@@ -192,8 +232,8 @@ func quake(c *Config, name, keys, command string) {
 
 	c.ForWindow(Criteria{Instance: "quake_term"}, FloatingEnabled)
 	c.BindSym(keys, c.ExecFunc(func() error {
-		I3Msg(Mode(modeName))
-		defer I3Msg(Mode("default"))
+		i3msg.Run(Mode(modeName))
+		defer i3msg.Run(Mode("default"))
 
 		cmd := exec.Command("alacritty", "--class", "quake_term", "-e", command)
 		err := cmd.Start()
@@ -224,4 +264,19 @@ func quake(c *Config, name, keys, command string) {
 			return os.Remove(pidFile)
 		}))
 	})
+}
+
+func transpose(slice [][]string) [][]string {
+	xl := len(slice[0])
+	yl := len(slice)
+	result := make([][]string, xl)
+	for i := range result {
+		result[i] = make([]string, yl)
+	}
+	for i := 0; i < xl; i++ {
+		for j := 0; j < yl; j++ {
+			result[i][j] = slice[j][i]
+		}
+	}
+	return result
 }
