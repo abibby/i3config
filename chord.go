@@ -6,7 +6,7 @@ type BoundCommand struct {
 	commands []Command
 }
 
-func (c *Config) Chord(key1 string, key2 string, commands ...Command) {
+func (c *Config) BindChord(key1 string, key2 string, commands ...Command) {
 
 	chords, ok := c.chords[key1]
 	if !ok {
@@ -20,7 +20,7 @@ func (c *Config) Chord(key1 string, key2 string, commands ...Command) {
 
 func (ch Chords) apply(c *Config) {
 	for key1, commands := range ch {
-		chordName := key1 + " chord"
+		chordName := "Chord: " + key1
 		c.BindSym(key1, Mode(chordName))
 		c.Mode(chordName, func(sub *Config) {
 			for _, cmd := range commands {

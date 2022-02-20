@@ -44,13 +44,14 @@ var (
 	White   = Nord15
 )
 
+var term = "alacritty"
+var editor = "code"
+
+// var editor = term + " -e nvim"
+
 func main() {
 	// "~/.config/i3/config"
 	c := New("/home/adam/Documents/code/i3config/example/main.go")
-
-	term := "alacritty"
-	editor := "code"
-	// editor := term + " -e nvim"
 
 	c.Set("$test", "5")
 
@@ -77,8 +78,8 @@ func main() {
 
 	c.FloatingModifier("$mod")
 
-	c.BindSym("$mod+Shift+t", c.Recompile("/home/adam/.config/i3/config"), Restart)
-	c.BindSym("$mod+Shift+r", Exec("make -C ~/.config/i3"), Restart)
+	c.BindSym("$mod+Shift+r", c.Recompile("/home/adam/.config/i3/config"), Restart)
+	// c.BindSym("$mod+Shift+r", Exec("make -C ~/.config/i3"), Restart)
 
 	c.BindSym("$mod+Return", Exec(term))
 
@@ -101,10 +102,19 @@ func main() {
 
 	monitors := transpose([][]string{
 		// Desktop
-		{"HDMI1", "DVI-D-1-1", "HDMI-1-3"},
+		{"DP-0", "DVI-I-1", "HDMI-0"},
 
-		{"eDP1", "eDP1", "eDP1"},
+		// Work laptop
+		{"eDP-1", "DP-1", "DP-2"},
+
+		// Personal laptop
+		{"eDP1", "DP1", "DP1"},
+
+		// Work laptop
 		{"eDP-1", "eDP-1", "eDP-1"},
+
+		// Personal laptop
+		{"eDP1", "eDP1", "eDP1"},
 	})
 	for i := 1; i <= 12; i++ {
 		workspaceName := fmt.Sprintf("%d", i)
@@ -121,39 +131,10 @@ func main() {
 
 	c.BindSym("$mod+Shift+e", Exec("i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"))
 
-	// c.BindSym("$mod+Ctrl+Up", ResizeGrow(Up, 10), ResizeShrink(Down, 10)).Alias("$mod+Ctrl+w")
-	// c.BindSym("$mod+Ctrl+Down", ResizeGrow(Down, 10), ResizeShrink(Up, 10)).Alias("$mod+Ctrl+s")
-	// c.BindSym("$mod+Ctrl+Left", ResizeGrow(Left, 10), ResizeShrink(Right, 10)).Alias("$mod+Ctrl+a")
-	// c.BindSym("$mod+Ctrl+Right", ResizeGrow(Right, 10), ResizeShrink(Left, 10)).Alias("$mod+Ctrl+d")
-
-	c.BindSym(
-		"$mod+Ctrl+Up",
-		If(c, isFloating()).
-			Then(ResizeGrow(Height, 10)).
-			Else(ResizeGrow(Up, 10), ResizeShrink(Down, 10)),
-	).Alias("$mod+Ctrl+w")
-	c.BindSym(
-		"$mod+Ctrl+Down",
-		If(c, isFloating()).
-			Then(ResizeShrink(Height, 10)).
-			Else(ResizeGrow(Down, 10), ResizeShrink(Up, 10)),
-	).Alias("$mod+Ctrl+s")
-	c.BindSym(
-		"$mod+Ctrl+Left",
-		If(c, isFloating()).
-			Then(ResizeShrink(Width, 10)).
-			Else(ResizeGrow(Left, 10), ResizeShrink(Right, 10)),
-	).Alias("$mod+Ctrl+a")
-	c.BindSym(
-		"$mod+Ctrl+Right",
-		If(c, isFloating()).
-			Then(ResizeGrow(Width, 10)).
-			Else(ResizeGrow(Right, 10), ResizeShrink(Left, 10)),
-	).Alias("$mod+Ctrl+d")
-	// c.BindSym("$mod+Ctrl+Up", ResizeGrow(Height, 10)).Alias("$mod+Ctrl+w")
-	// c.BindSym("$mod+Ctrl+Down", ResizeShrink(Height, 10)).Alias("$mod+Ctrl+s")
-	// c.BindSym("$mod+Ctrl+Left", ResizeGrow(Width, 10)).Alias("$mod+Ctrl+a")
-	// c.BindSym("$mod+Ctrl+Right", ResizeShrink(Width, 10)).Alias("$mod+Ctrl+d")
+	c.BindSym("$mod+Ctrl+Up", ResizeGrow(Height, 10)).Alias("$mod+Ctrl+w")
+	c.BindSym("$mod+Ctrl+Down", ResizeShrink(Height, 10)).Alias("$mod+Ctrl+s")
+	c.BindSym("$mod+Ctrl+Left", ResizeGrow(Width, 10)).Alias("$mod+Ctrl+a")
+	c.BindSym("$mod+Ctrl+Right", ResizeShrink(Width, 10)).Alias("$mod+Ctrl+d")
 
 	c.Bar(func(bc *BarConfig) {
 		bc.Position(Top)
@@ -193,10 +174,10 @@ func main() {
 
 	c.BindSym("$mod+e", Exec("emoji"))
 	c.BindSym("$mod+c", Exec(editor))
-	c.Chord("$mod+b", "b", Exec("firefox -P Home"))
-	c.Chord("$mod+b", "g", Exec("firefox -P Work"))
+	c.BindChord("$mod+b", "b", Exec("chromium"))
+	c.BindChord("$mod+b", "g", Exec("chrome"))
 
-	c.BindSym("$mod+x", Exec("nautilus"))
+	c.BindSym("$mod+x", execTerm("ranger"))
 	c.BindSym("$mod+p", Exec("passmenu"))
 	c.BindSym("$mod+Shift+p", Exec("maim -s --format=png /dev/stdout | xclip -selection clipboard -t image/png -i"))
 
@@ -228,58 +209,11 @@ func main() {
 	c.OnStartup(Exec("systemctl start --user polkit.service"))
 	c.OnStartup(Exec("dunst"))
 	c.OnStartup(Exec("lxsession"))
+	c.OnStartup(Exec("nextcloud"))
+	c.OnStartup(Exec("solaar"))
+	c.OnStartup(Exec("xmodmap /home/adam/.Xmodmap"))
 
 	c.Run()
-}
-
-type Builder struct {
-	config        *Config
-	value         func() bool
-	trueCommands  []Command
-	falseCommands []Command
-}
-
-type Condition func() bool
-
-func isFloating() Condition {
-	return func() bool {
-		root, err := i3msg.GetTree()
-		if err != nil {
-			return false
-		}
-		floating := false
-		root.Walk(func(n *i3msg.Node) bool {
-			if n.Focused {
-				floating = n.Floating == "user_on"
-				return true
-			}
-			return false
-		})
-		return floating
-	}
-}
-
-func If(c *Config, value Condition) *Builder {
-	return &Builder{
-		config: c,
-		value:  value,
-	}
-}
-
-func (b *Builder) Then(commands ...Command) *Builder {
-	b.trueCommands = commands
-	return b
-}
-func (b *Builder) Else(commands ...Command) Command {
-	b.falseCommands = commands
-	return b.config.ExecFunc(func() error {
-		if b.value() {
-			i3msg.Run(b.trueCommands...)
-		} else {
-			i3msg.Run(b.falseCommands...)
-		}
-		return nil
-	})
 }
 
 func quake(c *Config, name, keys, command string) {
@@ -320,6 +254,10 @@ func quake(c *Config, name, keys, command string) {
 			return os.Remove(pidFile)
 		}))
 	})
+}
+
+func execTerm(cmd string) Command {
+	return Exec(fmt.Sprintf(`%s -e zsh -c "%s"`, term, cmd))
 }
 
 func transpose(slice [][]string) [][]string {
