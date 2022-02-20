@@ -6,8 +6,6 @@ import (
 	"os/exec"
 	"path"
 	"strings"
-
-	"github.com/abibby/i3config/i3msg"
 )
 
 type Command string
@@ -130,7 +128,7 @@ func (c *Config) Recompile(configPath string) Command {
 		if err != nil {
 			return err
 		}
-		err = i3msg.Run(Restart)
+		err = I3msg(Restart)
 		if err != nil {
 			return err
 		}

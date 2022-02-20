@@ -8,7 +8,6 @@ import (
 	"path"
 
 	. "github.com/abibby/i3config"
-	"github.com/abibby/i3config/i3msg"
 )
 
 var (
@@ -222,8 +221,8 @@ func quake(c *Config, name, keys, command string) {
 
 	c.ForWindow(Criteria{Instance: "quake_term"}, FloatingEnabled)
 	c.BindSym(keys, c.ExecFunc(func() error {
-		i3msg.Run(Mode(modeName))
-		defer i3msg.Run(Mode("default"))
+		I3msg(Mode(modeName))
+		defer I3msg(Mode("default"))
 
 		cmd := exec.Command("alacritty", "--class", "quake_term", "-e", command)
 		err := cmd.Start()

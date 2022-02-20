@@ -1,4 +1,4 @@
-package i3msg
+package i3config
 
 import (
 	"encoding/json"
@@ -6,19 +6,18 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/abibby/i3config"
 	"github.com/abibby/nulls"
 	"github.com/pkg/errors"
 )
 
-type Error struct {
+type I3msgError struct {
 	ParseError    bool   `json:"parse_error"`
 	ErrorMessage  string `json:"error"`
 	Input         string `json:"input"`
 	ErrorPosition string `json:"errorposition"`
 }
 
-func (e *Error) Error() string {
+func (e *I3msgError) Error() string {
 	if e.ParseError {
 		return fmt.Sprintf("%s\n%s\n%s", e.Input, e.ErrorPosition, e.ErrorMessage)
 	}
@@ -27,10 +26,10 @@ func (e *Error) Error() string {
 
 type CommandResult struct {
 	Success bool `json:"success"`
-	*Error
+	*I3msgError
 }
 
-func run(v interface{}, arg ...string) error {
+func i3msg(v interface{}, arg ...string) error {
 	b, err := exec.Command("i3-msg", arg...).Output()
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); !ok {
@@ -40,22 +39,22 @@ func run(v interface{}, arg ...string) error {
 	return errors.Wrap(json.Unmarshal(b, v), "failed to parse")
 }
 
-func Run(commands ...i3config.Command) error {
+func I3msg(commands ...Command) error {
 	r := []*CommandResult{}
 	strCommands := []string{}
 
 	for _, cmd := range commands {
 		strCommands = append(strCommands, cmd.Generate())
 	}
-	err := run(&r, strings.Join(strCommands, "; "))
+	err := i3msg(&r, strings.Join(strCommands, "; "))
 	if err != nil {
 		return err
 	}
 	if len(r) < 0 {
 		return fmt.Errorf("no result")
 	}
-	if r[0].Success == false && r[0].Error != nil {
-		return r[0].Error
+	if r[0].Success == false && r[0].I3msgError != nil {
+		return r[0].I3msgError
 	}
 	return nil
 }
@@ -67,7 +66,7 @@ type Rect struct {
 	Height int `json:"height"`
 }
 
-type Workspace struct {
+type I3msgWorkspace struct {
 	ID      int    `json:"id"`
 	Num     int    `json:"num"`
 	Name    string `json:"name"`
@@ -78,13 +77,13 @@ type Workspace struct {
 	Urgent  bool   `json:"urgent"`
 }
 
-func GetWorkspaces() ([]*Workspace, error) {
-	w := []*Workspace{}
-	err := run(&w, "-t", "get_workspaces")
+func GetWorkspaces() ([]*I3msgWorkspace, error) {
+	w := []*I3msgWorkspace{}
+	err := i3msg(&w, "-t", "get_workspaces")
 	return w, err
 }
 
-type Output struct {
+type I3msgOutput struct {
 	Name             string        `json:"name"`
 	Active           bool          `json:"active"`
 	Primary          bool          `json:"primary"`
@@ -92,13 +91,13 @@ type Output struct {
 	CurrentWorkspace *nulls.String `json:"current_workspace"`
 }
 
-func GetOutputs() ([]*Output, error) {
-	o := []*Output{}
-	err := run(&o, "-t", "get_outputs")
+func GetOutputs() ([]*I3msgOutput, error) {
+	o := []*I3msgOutput{}
+	err := i3msg(&o, "-t", "get_outputs")
 	return o, err
 }
 
-type Node struct {
+type I3msgNode struct {
 	ID                 int64         `json:"id"`
 	Type               string        `json:"type"`
 	Orientation        string        `json:"orientation"`
@@ -118,8 +117,8 @@ type Node struct {
 	Name               string        `json:"name"`
 	Window             *nulls.Int    `json:"window"`
 	WindowType         *nulls.String `json:"window_type"`
-	Nodes              []*Node       `json:"nodes"`
-	FloatingNodes      []*Node       `json:"floating_nodes"`
+	Nodes              []*I3msgNode  `json:"nodes"`
+	FloatingNodes      []*I3msgNode  `json:"floating_nodes"`
 	Focus              []int64       `json:"focus"`
 	FullscreenMode     int           `json:"fullscreen_mode"`
 	Sticky             bool          `json:"sticky"`
@@ -127,13 +126,13 @@ type Node struct {
 	Swallows           []interface{} `json:"swallows"`
 }
 
-func GetTree() (*Node, error) {
-	t := &Node{}
-	err := run(&t, "-t", "get_tree")
+func GetTree() (*I3msgNode, error) {
+	t := &I3msgNode{}
+	err := i3msg(&t, "-t", "get_tree")
 	return t, errors.Wrap(err, "failed to run get_tree")
 }
 
-func (n *Node) Walk(cb func(n *Node) bool) {
+func (n *I3msgNode) Walk(cb func(n *I3msgNode) bool) {
 	if cb(n) {
 		return
 	}
