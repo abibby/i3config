@@ -78,7 +78,7 @@ func main() {
 
 	c.FloatingModifier("$mod")
 
-	c.BindSym("$mod+Shift+r", c.Recompile("/home/adam/.config/i3/config"), Restart)
+	c.BindSym("$mod+Shift+r", c.Recompile("/home/adam/.config/i3/config"))
 	// c.BindSym("$mod+Shift+r", Exec("make -C ~/.config/i3"), Restart)
 
 	c.BindSym("$mod+Return", Exec(term))
