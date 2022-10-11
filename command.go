@@ -118,21 +118,26 @@ func (c *Config) Path() string {
 	return c.path
 }
 
+func (c *Config) RecompileFunc(configPath string) error {
+
+	b, err := exec.Command("go", "run", c.path).Output()
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(configPath, b, 0644)
+	if err != nil {
+		return err
+	}
+	err = I3msg(Restart)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Config) Recompile(configPath string) Command {
 	return c.ExecFunc(func() error {
-		b, err := exec.Command("go", "run", c.path).Output()
-		if err != nil {
-			return err
-		}
-		err = ioutil.WriteFile(configPath, b, 0644)
-		if err != nil {
-			return err
-		}
-		err = I3msg(Restart)
-		if err != nil {
-			return err
-		}
-		return nil
+		return c.RecompileFunc(configPath)
 	})
 }
 
