@@ -78,4 +78,7 @@ var keyMap = map[string]hotkey.Key{
 	"f18": hotkey.KeyF18,
 	"f19": hotkey.KeyF19,
 	"f20": hotkey.KeyF20,
+
+	"comma":  43,
+	"period": 47,
 }

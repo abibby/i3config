@@ -52,10 +52,7 @@ func main() {
 	// "~/.config/i3/config"
 	c := New("/home/adam/Documents/code/i3config/example/main.go")
 
-	c.Set("$test", "5")
-
-	// c.Set("$mod", "Mod4")
-	c.Set("$mod", "Ctrl")
+	c.Set("$mod", "Mod4")
 
 	c.Gaps(Gaps{
 		Inner: 10,
@@ -87,10 +84,10 @@ func main() {
 
 	c.BindSym("$mod+r", Exec("rofi -show drun"))
 
-	c.BindSym("$mod+Left", FocusLeft).Alias("$mod+a")
-	c.BindSym("$mod+Right", FocusRight).Alias("$mod+d")
-	c.BindSym("$mod+Up", FocusUp).Alias("$mod+w")
-	c.BindSym("$mod+Down", FocusDown).Alias("$mod+s")
+	// c.BindSym("$mod+Left", FocusLeft).Alias("$mod+a")
+	// c.BindSym("$mod+Right", FocusRight).Alias("$mod+d")
+	// c.BindSym("$mod+Up", FocusUp).Alias("$mod+w")
+	// c.BindSym("$mod+Down", FocusDown).Alias("$mod+s")
 
 	c.BindSym("$mod+Shift+Left", MoveLeft).Alias("$mod+Shift+a")
 	c.BindSym("$mod+Shift+Right", MoveRight).Alias("$mod+Shift+d")
@@ -188,9 +185,12 @@ func main() {
 	c.BindSym("$mod+Shift+l", Exec("find ~/.screenlayout -type f | rofi -dmenu -i -p Layout | xargs -r sh && i3-msg restart"))
 
 	// Music Control
-	c.BindSym("$mod+space", Exec("playerctl play-pause"))
-	c.BindSym("$mod+comma", Exec("playerctl previous"))
-	c.BindSym("$mod+period", Exec("playerctl next"))
+	c.BindSym("$mod+space", Exec(`osascript -e 'tell application "Spotify" to playpause'`))
+	// c.BindSym("$mod+space", Exec("playerctl play-pause"))
+	c.BindSym("$mod+comma", Exec(`osascript -e 'tell application "Spotify" to previous track'`))
+	// c.BindSym("$mod+comma", Exec("playerctl previous"))
+	c.BindSym("$mod+period", Exec(`osascript -e 'tell application "Spotify" to next track'`))
+	// c.BindSym("$mod+period", Exec("playerctl next"))
 	c.BindSym("$mod+minus", Exec("changeVolume 2dB- unmute"))
 	c.BindSym("$mod+equal", Exec("changeVolume 2dB+ unmute"))
 	c.BindSym("$mod+l", Exec("listAudioOutputs > ~/lao.log 2>&1"))
