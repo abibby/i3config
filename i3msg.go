@@ -39,7 +39,7 @@ func i3msg(v interface{}, arg ...string) error {
 	return errors.Wrap(json.Unmarshal(b, v), "failed to parse")
 }
 
-func I3msg(commands ...Command) error {
+func I3msg(commands ...*Command) error {
 	r := []*CommandResult{}
 	strCommands := []string{}
 
@@ -50,10 +50,10 @@ func I3msg(commands ...Command) error {
 	if err != nil {
 		return err
 	}
-	if len(r) < 0 {
+	if len(r) == 0 {
 		return fmt.Errorf("no result")
 	}
-	if r[0].Success == false && r[0].I3msgError != nil {
+	if !r[0].Success && r[0].I3msgError != nil {
 		return r[0].I3msgError
 	}
 	return nil

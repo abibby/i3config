@@ -55,7 +55,7 @@ func (c *Criteria) String() string {
 	return strings.Join(ret, " ")
 }
 
-func (c *Config) ForWindow(criteria Criteria, border Command) {
+func (c *Config) ForWindow(criteria Criteria, border *Command) {
 	c.raw(fmt.Sprintf("for_window [%s] %s", criteria.String(), border.Generate()))
 }
 

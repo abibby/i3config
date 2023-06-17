@@ -9,11 +9,11 @@ type Bind struct {
 	bindType string
 	keys     string
 	release  bool
-	commands []Command
+	commands []*Command
 	alias    []string
 }
 
-func (c *Config) newBind(bindType, keys string, commands []Command) *Bind {
+func (c *Config) newBind(bindType, keys string, commands []*Command) *Bind {
 	b := &Bind{
 		bindType: bindType,
 		keys:     keys,
@@ -26,11 +26,11 @@ func (c *Config) newBind(bindType, keys string, commands []Command) *Bind {
 
 	return b
 }
-func (c *Config) BindSym(keys string, commands ...Command) *Bind {
+func (c *Config) BindSym(keys string, commands ...*Command) *Bind {
 	return c.newBind("bindsym", keys, commands)
 }
 
-func (c *Config) BindCode(code int, commands ...Command) *Bind {
+func (c *Config) BindCode(code int, commands ...*Command) *Bind {
 	return c.newBind("bindsym", fmt.Sprint(code), commands)
 }
 

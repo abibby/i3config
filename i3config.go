@@ -2,8 +2,6 @@ package i3config
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"reflect"
 )
 
@@ -35,8 +33,20 @@ func (c *Config) newSubConfig() *Config {
 	sc.subConfig = true
 	return sc
 }
+
+type Variable struct {
+	Name  string
+	Value string
+}
+
+func (v *Variable) Generate() string {
+	return v.Name + " " + v.Value
+}
 func (c *Config) Set(variable, value string) {
-	c.raw(fmt.Sprintf("set %s %s", variable, value))
+	c.AddLine(&Variable{
+		Name:  variable,
+		Value: value,
+	})
 }
 func (c *Config) AddLine(g Generator) {
 	c.lines = append(c.lines, g)
@@ -48,20 +58,6 @@ func (c *Config) Generate() string {
 		src += b.Generate() + "\n"
 	}
 	return src
-}
-
-func (c *Config) Run() {
-	if len(os.Args) > 1 && os.Args[1] == "func" {
-		err := c.funcs[os.Args[2]]()
-		if err != nil {
-			exec.Command("notify-send", err.Error()).Run()
-			fmt.Printf("%v\n", err)
-			os.Exit(1)
-		}
-	} else {
-		c.chords.apply(c)
-		fmt.Print(c.Generate())
-	}
 }
 
 func EachKey(v interface{}, cb func(key, value string)) {

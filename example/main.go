@@ -54,7 +54,8 @@ func main() {
 
 	c.Set("$test", "5")
 
-	c.Set("$mod", "Mod4")
+	// c.Set("$mod", "Mod4")
+	c.Set("$mod", "Ctrl")
 
 	c.Gaps(Gaps{
 		Inner: 10,
@@ -173,8 +174,9 @@ func main() {
 
 	c.BindSym("$mod+e", Exec("emoji"))
 	c.BindSym("$mod+c", Exec(editor))
-	c.BindChord("$mod+b", "b", Exec("chromium"))
-	c.BindChord("$mod+b", "g", Exec("chrome"))
+	// c.BindChord("$mod+b", "b", Exec("chromium"))
+	// c.BindChord("$mod+b", "g", Exec("chrome"))
+	c.BindSym("$mod+b", Exec(`"Google Chrome"`))
 
 	c.BindSym("$mod+x", execTerm("ranger"))
 	c.BindSym("$mod+p", Exec("passmenu"))
@@ -255,7 +257,7 @@ func quake(c *Config, name, keys, command string) {
 	})
 }
 
-func execTerm(cmd string) Command {
+func execTerm(cmd string) *Command {
 	return Exec(fmt.Sprintf(`%s -e zsh -c "%s"`, term, cmd))
 }
 

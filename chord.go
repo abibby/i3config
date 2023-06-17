@@ -3,10 +3,10 @@ package i3config
 type Chords map[string][]*BoundCommand
 type BoundCommand struct {
 	keys     string
-	commands []Command
+	commands []*Command
 }
 
-func (c *Config) BindChord(key1 string, key2 string, commands ...Command) {
+func (c *Config) BindChord(key1 string, key2 string, commands ...*Command) {
 
 	chords, ok := c.chords[key1]
 	if !ok {
@@ -25,7 +25,7 @@ func (ch Chords) apply(c *Config) {
 		c.Mode(chordName, func(sub *Config) {
 			for _, cmd := range commands {
 				sub.BindSym(cmd.keys, append(
-					[]Command{Mode("default")},
+					[]*Command{Mode("default")},
 					cmd.commands...,
 				)...)
 			}
