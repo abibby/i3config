@@ -17,6 +17,9 @@ type Config struct {
 type Generator interface {
 	Generate() string
 }
+type GenerateYabaier interface {
+	GenerateYabai() string
+}
 
 func New(path string) *Config {
 	return &Config{

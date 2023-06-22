@@ -2,9 +2,6 @@ package i3config
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
-	"path"
 	"strings"
 )
 
@@ -76,8 +73,10 @@ func MoveContainer(name string) *Command {
 	return NewCommand("move", "container to workspace "+escapeString(name))
 }
 
-func Border(size int) *Command {
-	return NewCommand("border", fmt.Sprintf("pixel %d", size))
+type Border int
+
+func (b Border) Generate() string {
+	return fmt.Sprintf("border pixel %d", b)
 }
 
 type Direction string
@@ -118,34 +117,8 @@ func ResizeSet(size Size) *Command {
 	}
 }
 
-func (c *Config) ExecFunc(cb func() error) *Command {
-	if c.subConfig {
-		panic("ExecFunc must be used from a root config")
-	}
-	key := fmt.Sprint(funcKey)
-	funcKey++
-	c.funcs[key] = cb
-	dir, file := path.Split(c.path)
-	return Exec(fmt.Sprintf(`bash -c "cd '%s' && go run '%s' func %s"`, dir, file, key))
-}
 func (c *Config) Path() string {
 	return c.path
-}
-
-func (c *Config) RecompileFunc(configPath string) error {
-	b, err := exec.Command("go", "run", c.path).Output()
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(configPath, b, 0644)
-	if err != nil {
-		return err
-	}
-	err = I3msg(Restart)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (c *Config) Recompile(configPath string) *Command {

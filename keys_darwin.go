@@ -1,12 +1,16 @@
 package i3config
 
-import "golang.design/x/hotkey"
+import (
+	"golang.design/x/hotkey"
+)
 
 var modMap = map[string]hotkey.Modifier{
 	"ctrl":  hotkey.ModCtrl,
 	"shift": hotkey.ModShift,
 	"mod4":  hotkey.ModOption,
+	"opt":   hotkey.ModOption,
 	"mod1":  hotkey.ModCmd,
+	"cmd":   hotkey.ModCmd,
 }
 
 var keyMap = map[string]hotkey.Key{
@@ -81,4 +85,6 @@ var keyMap = map[string]hotkey.Key{
 
 	"comma":  43,
 	"period": 47,
+
+	"function": 0x3F,
 }

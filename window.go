@@ -55,8 +55,53 @@ func (c *Criteria) String() string {
 	return strings.Join(ret, " ")
 }
 
-func (c *Config) ForWindow(criteria Criteria, border *Command) {
-	c.raw(fmt.Sprintf("for_window [%s] %s", criteria.String(), border.Generate()))
+type Window struct {
+	criteria Criteria
+	option   Generator
+}
+
+func (w *Window) Generate() string {
+	return fmt.Sprintf("for_window [%s] %s", w.criteria.String(), w.option.Generate())
+}
+
+func (w *Window) GenerateYabai() string {
+	src := ""
+	if b, ok := w.option.(Border); ok {
+		if w.criteria.Class == ".*" {
+			src += fmt.Sprintf("yabai -m config window_border on\n"+
+				"yabai -m config window_border_width %d\n", b)
+		}
+	}
+	if w.option == FloatingEnabled {
+		if w.criteria.Title != "" {
+			src += fmt.Sprintf("yabai -m rule --add title=%s manage=off", escapeString(w.criteria.Title))
+		}
+		if w.criteria.Instance != "" {
+			src += fmt.Sprintf("yabai -m rule --add app=%s manage=off", escapeString(w.criteria.Instance))
+		}
+	}
+	return strings.TrimRight(src, "\n")
+}
+
+func (c *Config) ForWindow(criteria Criteria, option Generator) {
+	c.AddLine(&Window{
+		criteria: criteria,
+		option:   option,
+	})
+
+}
+
+type FocusFollowsMouse string
+
+func (f FocusFollowsMouse) Generate() string {
+	return "focus_follows_mouse " + string(f)
+}
+func (f FocusFollowsMouse) GenerateYabai() string {
+	state := "off"
+	if f == "yes" {
+		state = "autofocus"
+	}
+	return "yabai -m config focus_follows_mouse " + state
 }
 
 func (c *Config) FocusFollowsMouse(follow bool) {
@@ -64,9 +109,17 @@ func (c *Config) FocusFollowsMouse(follow bool) {
 	if follow {
 		strFollow = "yes"
 	}
-	c.raw("focus_follows_mouse " + strFollow)
+	c.AddLine(FocusFollowsMouse(strFollow))
 }
 
+type FloatingModifier string
+
+func (f FloatingModifier) Generate() string {
+	return "floating_modifier " + string(f)
+}
+func (f FloatingModifier) GenerateYabai() string {
+	return "yabai -m config mouse_modifier " + string(f)
+}
 func (c *Config) FloatingModifier(key string) {
-	c.raw("floating_modifier " + key)
+	c.AddLine(FloatingModifier(key))
 }

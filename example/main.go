@@ -6,9 +6,26 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"runtime"
+	"sync"
 
 	. "github.com/abibby/i3config"
 )
+
+type OS struct {
+	Linux  string
+	Darwin string
+}
+
+func (o OS) Use() string {
+	switch runtime.GOOS {
+	case "linux":
+		return o.Linux
+	case "darwin":
+		return o.Darwin
+	}
+	return ""
+}
 
 var (
 	Nord0  = HexColor("2e3440")
@@ -44,21 +61,25 @@ var (
 )
 
 var term = "alacritty"
-var editor = "code"
+var editor = "code -n"
+var browser = OS{Linux: "chrome", Darwin: `"Google Chrome"`}.Use()
 
 // var editor = term + " -e nvim"
 
 func main() {
 	// "~/.config/i3/config"
-	c := New("/home/adam/Documents/code/i3config/example/main.go")
+	c := New("/Users/adambibby/github.com/abibby/i3config/example/main.go")
 
-	c.Set("$mod", "Mod4")
+	c.Set("$mod", OS{Linux: "Mod4", Darwin: "Ctrl"}.Use())
+	c.Set("$ctrl", OS{Linux: "Ctrl", Darwin: "Cmd"}.Use())
 
 	c.Gaps(Gaps{
 		Inner: 10,
+		Outer: 10,
 		Smart: true,
 	})
 	c.ForWindow(Criteria{Class: ".*"}, Border(4))
+	c.ForWindow(Criteria{Instance: "choose"}, FloatingEnabled)
 	c.HideEdgeBorders(Both)
 
 	c.Colors(&ColorConfig{
@@ -75,19 +96,22 @@ func main() {
 
 	c.FloatingModifier("$mod")
 
-	c.BindSym("$mod+Shift+r", c.Recompile("/home/adam/.config/i3/config"))
+	c.BindSym("$mod+Shift+r", c.Recompile(OS{
+		Linux:  "/home/adam/.config/i3/config",
+		Darwin: "/Users/adambibby/.config/yabai/yabairc",
+	}.Use()))
 	// c.BindSym("$mod+Shift+r", Exec("make -C ~/.config/i3"), Restart)
 
 	c.BindSym("$mod+Return", Exec(term))
 
 	c.BindSym("$mod+Shift+q", Kill)
 
-	c.BindSym("$mod+r", Exec("rofi -show drun"))
+	// c.BindSym("$mod+r", Exec("rofi -show drun"))
 
-	// c.BindSym("$mod+Left", FocusLeft).Alias("$mod+a")
-	// c.BindSym("$mod+Right", FocusRight).Alias("$mod+d")
-	// c.BindSym("$mod+Up", FocusUp).Alias("$mod+w")
-	// c.BindSym("$mod+Down", FocusDown).Alias("$mod+s")
+	c.BindSym("$mod+Left", FocusLeft)   // .Alias("$mod+a")
+	c.BindSym("$mod+Right", FocusRight) // .Alias("$mod+d")
+	c.BindSym("$mod+Up", FocusUp)       // .Alias("$mod+w")
+	c.BindSym("$mod+Down", FocusDown)   // .Alias("$mod+s")
 
 	c.BindSym("$mod+Shift+Left", MoveLeft).Alias("$mod+Shift+a")
 	c.BindSym("$mod+Shift+Right", MoveRight).Alias("$mod+Shift+d")
@@ -114,24 +138,35 @@ func main() {
 		{"eDP1", "eDP1", "eDP1"},
 	})
 	for i := 1; i <= 12; i++ {
-		workspaceName := fmt.Sprintf("%d", i)
+		workspace := i
+		key := i
+
+		if runtime.GOOS == "darwin" {
+			if workspace <= 4 {
+				workspace += 4
+			} else if workspace <= 8 {
+				workspace -= 4
+			}
+		}
+
+		workspaceName := fmt.Sprintf("%d", workspace)
 
 		c.WorkspaceOutput(workspaceName, monitors[(i-1)/4]...)
 
 		if i <= 10 {
-			c.BindSym(fmt.Sprintf("$mod+%d", i%10), Workspace(workspaceName))
-			c.BindSym(fmt.Sprintf("$mod+Shift+%d", i%10), MoveContainer(workspaceName))
+			c.BindSym(fmt.Sprintf("$mod+%d", key%10), Workspace(workspaceName))
+			c.BindSym(fmt.Sprintf("$mod+Shift+%d", key%10), MoveContainer(workspaceName))
 		}
-		c.BindSym(fmt.Sprintf("$mod+F%d", i), Workspace(workspaceName))
-		c.BindSym(fmt.Sprintf("$mod+Shift+F%d", i), MoveContainer(workspaceName))
+		c.BindSym(fmt.Sprintf("$mod+F%d", key), Workspace(workspaceName))
+		c.BindSym(fmt.Sprintf("$mod+Shift+F%d", key), MoveContainer(workspaceName))
 	}
 
 	c.BindSym("$mod+Shift+e", Exec("i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"))
 
-	c.BindSym("$mod+Ctrl+Up", ResizeGrow(Height, 10)).Alias("$mod+Ctrl+w")
-	c.BindSym("$mod+Ctrl+Down", ResizeShrink(Height, 10)).Alias("$mod+Ctrl+s")
-	c.BindSym("$mod+Ctrl+Left", ResizeGrow(Width, 10)).Alias("$mod+Ctrl+a")
-	c.BindSym("$mod+Ctrl+Right", ResizeShrink(Width, 10)).Alias("$mod+Ctrl+d")
+	c.BindSym("$mod+$ctrl+Up", ResizeGrow(Height, 32)).Alias("$mod+$ctrl+w")
+	c.BindSym("$mod+$ctrl+Down", ResizeShrink(Height, 32)).Alias("$mod+$ctrl+s")
+	c.BindSym("$mod+$ctrl+Left", ResizeGrow(Width, 32)).Alias("$mod+$ctrl+a")
+	c.BindSym("$mod+$ctrl+Right", ResizeShrink(Width, 32)).Alias("$mod+$ctrl+d")
 
 	c.Bar(func(bc *BarConfig) {
 		bc.Position(Top)
@@ -169,15 +204,19 @@ func main() {
 	quake(c, "math", "$mod+m", "qalc")
 	quake(c, "cal", "$mod+k", "calread")
 
-	c.BindSym("$mod+e", Exec("emoji"))
-	c.BindSym("$mod+c", Exec(editor))
+	// c.BindSym("$mod+e", Exec("emoji"))
+	c.BindSym("$mod+e", Exec(editor))
 	// c.BindChord("$mod+b", "b", Exec("chromium"))
 	// c.BindChord("$mod+b", "g", Exec("chrome"))
-	c.BindSym("$mod+b", Exec(`"Google Chrome"`))
+	c.BindSym("$mod+g", Exec(`"Google Chrome" --profile-directory="Profile 1"`))
+	c.BindSym("$mod+b", Exec(`"Google Chrome" --profile-directory="Profile 2"`))
 
 	c.BindSym("$mod+x", execTerm("ranger"))
-	c.BindSym("$mod+p", Exec("passmenu"))
-	c.BindSym("$mod+Shift+p", Exec("maim -s --format=png /dev/stdout | xclip -selection clipboard -t image/png -i"))
+	c.BindSym("$mod+p", Exec("zsh -c '~/bin/bwmenu'"))
+	c.BindSym("$mod+Shift+p", Exec(OS{
+		Linux:  "maim -s --format=png /dev/stdout | xclip -selection clipboard -t image/png -i",
+		Darwin: "screenshot",
+	}.Use()))
 
 	c.BindSym("$mod+u", Exec("cat ~/.config/adam/bookmarks | sort | rofi -dmenu -i -p sites | xargs -r surf"))
 	c.BindSym("$mod+Shift+b", Exec("find ~/Pictures/wallpapers -type f | rofi -dmenu -i -p Wallpaper > ~/.config/adam/wallpaper && feh --bg-fill \"$(cat ~/.config/adam/wallpaper)\""))
@@ -217,16 +256,23 @@ func main() {
 	c.Run()
 }
 
+var quakeForWindow = &sync.Once{}
+
 func quake(c *Config, name, keys, command string) {
 	modeName := "quake " + name
 	pidFile := path.Join(os.TempDir(), "i3quake-"+name)
 
-	c.ForWindow(Criteria{Instance: "quake_term"}, FloatingEnabled)
+	quakeForWindow.Do(func() {
+		c.ForWindow(Criteria{Title: "quake_term"}, FloatingEnabled)
+	})
 	c.BindSym(keys, c.ExecFunc(func() error {
 		I3msg(Mode(modeName))
 		defer I3msg(Mode("default"))
 
-		cmd := exec.Command("alacritty", "--class", "quake_term", "-e", command)
+		cmd := exec.Command("alacritty", "--title", "quake_term", "-e", command)
+		if runtime.GOOS == "darwin" {
+			cmd = exec.Command("open", "-a", "alacritty", "-n", "--args", "--title", "quake_term", "-e", command)
+		}
 		err := cmd.Start()
 		if err != nil {
 			return err
