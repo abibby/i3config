@@ -42,7 +42,7 @@ type Variable struct {
 }
 
 func (v *Variable) Generate() string {
-	return v.Name + " " + v.Value
+	return "set " + v.Name + " " + v.Value
 }
 func (c *Config) Set(variable, value string) {
 	c.AddLine(&Variable{

@@ -126,7 +126,7 @@ func (c *Config) ExecFunc(cb func() error) *Command {
 	funcKey++
 	c.funcs[key] = cb
 	dir := path.Dir(c.path)
-	return Exec(fmt.Sprintf(`bash -c "cd '%s' && %s func %s"`, dir, c.binName, key))
+	return Exec(fmt.Sprintf(`bash -c "cd '%s' && %s func %s"`, dir, "./"+c.binName, key))
 }
 func (c *Config) Path() string {
 	return c.path
