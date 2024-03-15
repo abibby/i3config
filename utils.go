@@ -13,47 +13,10 @@ func indent(src string) string {
 }
 
 func escapeString(str string) string {
-	return `"` + strings.ReplaceAll(str, `"`, `\\"`) + `"`
+	str = strings.ReplaceAll(str, `\`, `\\"`)
+	str = strings.ReplaceAll(str, `"`, `\\"`)
+	return `"` + str + `"`
 }
 
-func unescapeString(str string) string {
-	return strings.ReplaceAll(str[1:len(str)-1], `\\"`, `"`)
-}
-
-func parseArgs(str string) []string {
-	argv := []string{""}
-	i := 0
-	var quote rune
-	escape := false
-	for _, v := range str {
-		if escape {
-			argv[i] += string(v)
-			continue
-		}
-		if v == '\\' {
-			escape = true
-			continue
-		}
-		if quote != 0 {
-			if v == quote {
-				quote = 0
-				continue
-			}
-			argv[i] += string(v)
-			continue
-		}
-
-		if v == '"' || v == '\'' {
-			quote = v
-			continue
-		}
-		if v == ' ' || v == '\t' {
-			argv = append(argv, "")
-			i++
-			continue
-		}
-
-		argv[i] += string(v)
-	}
-	return argv
-}
+// example of escaped escaped quotes
+// bindsym Mod4+g exec "emacsclient -c -e \\"(find-file \\\\"/tmp\\\\")\\""

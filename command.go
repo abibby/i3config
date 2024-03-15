@@ -126,7 +126,23 @@ func (c *Config) ExecFunc(cb func() error) *Command {
 	funcKey++
 	c.funcs[key] = cb
 	dir, file := path.Split(c.path)
-	return Exec(fmt.Sprintf(`bash -c "cd '%s' && go run '%s' func %s"`, dir, file, key))
+
+	bashSrc := `
+		BIN='%s'
+		cd '%s'
+		if [ ! -f $BIN ]; then
+			go build '%s' -o $BIN
+		fi
+		$BIN func '%s'
+	`
+	bashSrc = strings.TrimSpace(bashSrc)
+	bashSrc = strings.ReplaceAll(bashSrc, "\n", `\n`)
+	bashSrc = strings.ReplaceAll(bashSrc, `"`, `\"`)
+	bashSrc = strings.ReplaceAll(bashSrc, "\t", "")
+	bashSrc = strings.ReplaceAll(bashSrc, "$", `\$`)
+	bashSrc = fmt.Sprintf(bashSrc, path.Join(os.TempDir(), "i3config-"+c.rand), dir, file, key)
+
+	return Exec(fmt.Sprintf(`bash -c "%s"`, bashSrc))
 }
 func (c *Config) Path() string {
 	return c.path
