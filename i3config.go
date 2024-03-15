@@ -3,8 +3,6 @@ package i3config
 import (
 	"fmt"
 	"reflect"
-
-	"github.com/google/uuid"
 )
 
 type Config struct {
@@ -14,7 +12,7 @@ type Config struct {
 
 	subConfig bool
 	funcs     map[string]func() error
-	rand      string
+	binName   string
 }
 
 type Generator interface {
@@ -28,7 +26,7 @@ func New(path string) *Config {
 		chords:    Chords{},
 		subConfig: false,
 		funcs:     map[string]func() error{},
-		rand:      uuid.New().String(),
+		binName:   "config-bin",
 	}
 }
 

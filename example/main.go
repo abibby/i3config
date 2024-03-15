@@ -50,7 +50,7 @@ var editor = "code"
 
 func main() {
 	// "~/.config/i3/config"
-	c := New("/home/adam/Documents/code/i3config/example/main.go")
+	c := New("/Users/abibby/github.com/abibby/i3config/example/main.go")
 
 	c.Set("$mod", "Mod4")
 
