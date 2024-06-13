@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"path"
+
+	"github.com/martinlindhe/notify"
 )
 
 func (c *Config) Run() {
@@ -16,7 +18,7 @@ func (c *Config) Run() {
 	if arg1 == "func" {
 		err := c.funcs[os.Args[2]]()
 		if err != nil {
-			exec.Command("notify-send", err.Error()).Run()
+			notify.Notify("i3config", "i3 config exec func error", err.Error(), "")
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
 		}
