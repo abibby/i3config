@@ -18,5 +18,15 @@ func escapeString(str string) string {
 	return `"` + str + `"`
 }
 
+func unescapeString(str string) string {
+	if len(str) < 2 || str[0] != '"' || str[len(str)-1] != '"' {
+		return str
+	}
+	str = str[1 : len(str)-1]
+	str = strings.ReplaceAll(str, `\\"`, `"`)
+	str = strings.ReplaceAll(str, `\\`, `\`)
+	return str
+}
+
 // example of escaped escaped quotes
 // bindsym Mod4+g exec "emacsclient -c -e \\"(find-file \\\\"/tmp\\\\")\\""
